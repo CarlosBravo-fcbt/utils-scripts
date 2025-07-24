@@ -1,4 +1,3 @@
-# bootstrap.ps1
 Write-Host "🚀 Starting bootstrap..."
 
 # Step 1: Install Chocolatey if missing
