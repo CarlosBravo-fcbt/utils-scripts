@@ -7,7 +7,7 @@
 Automate setting up your Windows dev machine with:
 - **Chocolatey** (package manager)
 - **Python**
-- Popular dev tools: Git, Node.js (LTS), VSCode, Java JDK, Maven
+- Popular dev tools: Git, Node.js (LTS), nvm-windows, VSCode, Java JDK, Maven
 
 ---
 
