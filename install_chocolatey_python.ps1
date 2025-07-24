@@ -15,6 +15,9 @@ if (!(Get-Command python.exe -ErrorAction SilentlyContinue)) {
     Write-Host "🐍 Installing Python..."
     choco install python -y
     Write-Host "✅ Python installed."
+
+    Write-Host "♻️ Reloading PATH so python is available..."
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 } else {
     Write-Host "✅ Python is already installed."
 }
