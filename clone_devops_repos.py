@@ -1,5 +1,7 @@
 import os
 import subprocess
+import sys
+import json
 
 # 🔧 Set your DevOps base URL here
 BASE_URL = "https://fcbtdev@dev.azure.com/fcbtdev/FarmView/_git"
@@ -44,41 +46,64 @@ def print_menu():
     print("\n📦 Available Repositories:")
     for idx, repo in enumerate(REPOS, start=1):
         print(f"{idx}. {repo}")
-    print("\nType numbers separated by commas (e.g., 1,3,5) or type 'all' to clone all:")
+    print("\n✅ Choose by number (e.g., 1,3,5), by name (e.g., fvhome-auth,fvhome-crm-api), or type 'all' to clone all:")
 
-def clone_repo(repo):
-    if os.path.exists(repo):
-        print(f"✅ {repo} already exists, skipping.")
+def prompt_with_default(message, default):
+    user_input = input(f"{message} (default: '{default}'): ").strip()
+    return user_input if user_input else default
+
+def clone_repo(repo, target_dir):
+    repo_path = os.path.join(target_dir, repo)
+    if os.path.exists(repo_path):
+        print(f"✅ {repo} already exists in '{target_dir}', skipping.")
         return
     url = f"{BASE_URL}/{repo}"
-    print(f"🚀 Cloning {repo}...")
+    print(f"🚀 Cloning {repo} into '{target_dir}'...")
     try:
-        subprocess.run(["git", "clone", url], check=True)
+        subprocess.run(["git", "clone", url, repo_path], check=True)
         print(f"✅ Successfully cloned {repo}")
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to clone {repo}: {e}")
 
-def main():
-    print_menu()
-    choice = input("\nYour choice: ").strip().lower()
-
+def parse_choice(choice):
+    choice = choice.strip().lower()
     if choice == "all":
-        selected = REPOS
-    else:
-        try:
-            indices = [int(i.strip()) - 1 for i in choice.split(",")]
-            selected = [REPOS[i] for i in indices if 0 <= i < len(REPOS)]
-        except ValueError:
-            print("⚠️ Invalid input. Exiting.")
-            return
+        return REPOS
 
-    if not selected:
+    parts = [part.strip() for part in choice.split(",")]
+    selected = []
+
+    for part in parts:
+        if part.isdigit():
+            idx = int(part) - 1
+            if 0 <= idx < len(REPOS):
+                selected.append(REPOS[idx])
+        elif part in [repo.lower() for repo in REPOS]:
+            matched_repo = next(repo for repo in REPOS if repo.lower() == part)
+            selected.append(matched_repo)
+        else:
+            print(f"⚠️ Invalid selection ignored: '{part}'")
+
+    return list(dict.fromkeys(selected))  # remove duplicates
+
+def main():
+    # Prompt for root folder name (default: current folder name)
+    default_folder = os.path.basename(os.getcwd())
+    root_folder = prompt_with_default("Enter root folder name to create", default_folder)
+
+    print_menu()
+    choice = input("\nYour choice: ")
+    selected_repos = parse_choice(choice)
+
+    if not selected_repos:
         print("⚠️ No valid repositories selected. Exiting.")
         return
 
-    print(f"\n🛠 Cloning {len(selected)} repositories...\n")
-    for repo in selected:
-        clone_repo(repo)
+    print(f"\n🛠 Will clone {len(selected_repos)} repositories into folder '{root_folder}'...")
+    os.makedirs(root_folder, exist_ok=True)
+
+    for repo in selected_repos:
+        clone_repo(repo, root_folder)
 
     print("\n🎉 Done!")
 
